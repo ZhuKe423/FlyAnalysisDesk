@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+	<style type="text/css">
+	body, html,#allmap {width: 100%;height: 900px;overflow: hidden;margin:5;font-family:"微软雅黑";}
+	</style>
+	<script type="text/javascript" src="/static/js/update_map_info.js"></script>
+	<script type="text/javascript" src="/static/js/update_airplane.js"></script>
+	<script type="text/javascript" src="/static/js/jquery.js"></script>
+	<script type="text/javascript" src="//api.map.baidu.com/getscript?v=3.0&ak=RpbzSVUc0TKuqrfyNmk0oQoQOy7f4jGI"></script>
+	<script type="text/javascript" src="/static/js/map_config.js"></script>
+	<script type="text/javascript" src="/static/js/util.js"></script>
+	<title>地图展示</title>
+</head>
+<body>
+	<div style="display: flex;">
+		<div id="allmap" ></div>
+	</div>
+</body>
+</html>
+<script type="text/javascript">
+	// 百度地图API功能
+	var map;
+	var fixpoints = [];
+
+	function onload(){
+		map = new BMap.Map("allmap");    // 创建Map实例
+		centerPoint = new BMap.Point(103.957923,30.566009)
+		map.centerAndZoom(centerPoint, 8);  // 初始化地图,设置中心点坐标和地图级别
+		//添加地图类型控件
+		map.addControl(new BMap.MapTypeControl({
+			mapTypes:[
+				BMAP_NORMAL_MAP,
+				BMAP_HYBRID_MAP
+			]}));
+		//map.setCurrentCity("成都");          // 设置地图显示的城市 此项是必须设置的
+		map.setCenter(centerPoint);
+		map.enableScrollWheelZoom(true);     //开启鼠标滚轮缩放
+		// console.log(styleJson);
+		map.setMapStyleV2({
+  			styleId: '3529feca41398196258f34cf11f69b78'
+		});
+	}
+    var zuls_points = [['ELNUN','GOMON','IBVUL','DCH','DOLGU','BIGOR','VIPIB','KAMAX','P122','MIKOS','CZH',
+            'UU911','UU912','UU913','UU515','UU514','UU513','UU512','UU511','ZUUU'],
+            ['ZSSS','WTM','YIH','ENH','LOTMO','SAKPU','P494','BONBO','FLG','DS','TOROD','ANSAR','GAO','P491',
+                'TEBUN','UU811','UU423','JTG','UU812','BHS','UU711','UU712','UU713','UU515','UU514','UU511','ZUUU']
+                ]
+
+    function get_fixpoints_1(map){
+        $.ajax({
+            url: "/app/Map/get_fix_point",
+            data: {
+                code: 1
+            },
+            success: function( result ) {
+                console.log(result['data'])
+                for(let i = 0; i < result['data'].length ; i ++)
+                {
+                    let item = result['data'][i]
+                    if ((zuls_points[0].indexOf(item['poncode']) != -1)
+                        || (zuls_points[1].indexOf(item['poncode']) != -1)){
+
+                        let ggPoint = conver_GCJ_toBDformat(item['longV'],item['latV'])
+                        tmpData = {
+                                        "point": ggPoint,
+                                        "label": item['poncode'],
+                                        "star": (item['poncode'] == 'CZH' || item['poncode'] == 'TEBUN'),
+                                        "poncode": item['poncode']
+                                    };
+                        fixpoints.push(tmpData)
+                    }
+                }
+                update_fixpoints_onmap_1(map, fixpoints);
+            }
+        })
+    }
+
+    var routePointArr = []
+    function update_starroute_ls(map)
+    {
+        console.log("update_starroute:")
+        //
+        for(let index = 0; index < zuls_points.length; index++){
+            let items = zuls_points[index]
+            let route = []
+            console.log(items)
+            for (let item = 0; item < items.length; item++){
+                for (let i = 0; i < fixpoints.length; i++){
+                    if(items[item] == fixpoints[i]['poncode']){
+                        route.push(fixpoints[i]['point'])
+                    }
+                }
+            }
+            routePointArr.push(route)
+        }
+
+        console.log(routePointArr)
+        let color = ['green', 'yellow','blue']
+
+        for(let i = 0; i < routePointArr.length; i++){
+            var polyline = new BMap.Polyline(
+                routePointArr[i],
+                {strokeColor:color[i], strokeWeight:3, strokeOpacity:0.5}
+            );
+
+            routPolyline.push(polyline);
+            map.addOverlay(polyline);
+        }
+        console.log(routPolyline)
+    }
+
+    function update_fixpoints_onmap_1(map, gpoints)
+    {
+        setTimeout(function(){
+            for (var index = 0; index < gpoints.length; index++){
+                if(gpoints[index]['star'] == true){
+                    myIcon = new BMap.Icon("/static/images/starpoint2.png",new BMap.Size(24, 24),{anchor: new BMap.Size(12, 24)});
+                }else{
+                    myIcon = new BMap.Icon("/static/images/fixpoint3.png",new BMap.Size(24, 24),{anchor: new BMap.Size(12, 24)});
+                    let label = new BMap.Label(gpoints[index]['label'],{offset:new BMap.Size(20,-10)});
+                }
+                let marker = new BMap.Marker(gpoints[index]['point'],{icon: myIcon});
+                /*
+                if(gpoints[index]['star'] == true){
+                    let label = new BMap.Label(gpoints[index]['label'],{offset:new BMap.Size(20,-10)});
+                    marker.setLabel(label); //添加百度label
+                }
+                */
+                if((gpoints[index]['label'] == 'UU515') || (gpoints[index]['label'] == 'UU514') ||
+                    (gpoints[index]['label'] == 'UU511') || (gpoints[index]['label'] == 'ZUUU')){
+                    let label = new BMap.Label(gpoints[index]['label'],{offset:new BMap.Size(20,-10)});
+                    marker.setLabel(label); //添加百度label
+                }
+                map.addOverlay(marker);
+            }
+            update_starroute_ls(map);
+        }, 2000);
+    }
+
+	function get_CES5405_radar(map){
+		$.ajax({
+            url: "/app/Draft/get_ces5405_radar",
+            data: {
+                code: 1
+            },
+            success: function( result ) {
+            	console.log(result['data'])
+            	var route = []
+				for (let i in result['data']){
+					let item = result['data'][i]
+					let Point = conver_GCJ_toBDformat(parseFloat(item['longitude']),parseFloat(item['latitude']))
+					route.push(Point)
+				}
+				console.log(route)
+				var polyline = new BMap.Polyline(route,
+                	{strokeColor:"white", strokeWeight:3, strokeOpacity:0.5}
+            	);
+            	map.addOverlay(polyline);
+            	console.log("draw a radar")
+            }
+        })
+	}
+
+	function get_CCA4402_radar(map){
+		$.ajax({
+            url: "/app/Draft/get_CCA4402_radar",
+            data: {
+                code: 1
+            },
+            success: function( result ) {
+            	console.log(result['data'])
+            	var route = []
+				for (let i in result['data']){
+					let item = result['data'][i]
+					let Point = conver_GCJ_toBDformat(parseFloat(item['longitude']),parseFloat(item['latitude']))
+					route.push(Point)
+				}
+				console.log(route)
+				var polyline = new BMap.Polyline(route,
+                	{strokeColor:"white", strokeWeight:3, strokeOpacity:0.5}
+            	);
+            	map.addOverlay(polyline);
+            	console.log("draw a radar")
+            }
+        })
+	}
+
+	function get_two_radars(map){
+		setTimeout(function(){
+			get_CES5405_radar(map)
+			get_CCA4402_radar(map)
+		},3000)
+	}
+
+	$(function(){
+		onload();
+		get_fixpoints_1(map);
+		get_two_radars(map);
+	});
+</script>

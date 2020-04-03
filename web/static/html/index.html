@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+	<style type="text/css">
+	body, html,#allmap {width: 100%;height: 900px;overflow: hidden;margin:5;font-family:"微软雅黑";}
+	</style>
+	<script type="text/javascript" src="/static/js/update_map_info.js"></script>
+	<script type="text/javascript" src="/static/js/update_airplane.js"></script>
+	<script type="text/javascript" src="/static/js/operate_cmd.js"></script>
+	<script type="text/javascript" src="/static/js/jquery.js"></script>
+	<script type="text/javascript" src="//api.map.baidu.com/getscript?v=3.0&ak=RpbzSVUc0TKuqrfyNmk0oQoQOy7f4jGI"></script>
+	<script type="text/javascript" src="/static/js/map_config.js"></script>
+	<script type="text/javascript" src="/static/js/util.js"></script>
+	<title>地图展示</title>
+</head>
+<body>
+	<div style="position=absolute;top=10px">
+		<div id="schdule">
+			<input id="set_datetime"  style="width:130px" value="2019-11-26 00:00:00" />
+			<input id="changeDate" type="button" value="ChangeDate" onclick="change_date()"/>
+			<input id="cur_datetime"  style="width:130px" value="0" disabled/>
+			<input id="cur_timestamp"  style="width:100px" value="0" disabled/>
+			<select id="selectSpeed" onchange="update_speed()">
+				<option value ="1" selected>x1</option>
+				<option value ="2" >x2</option>
+				<option value ="3" >x3</option>
+				<option value ="5" >x5</option>
+				<option value ="10" >x10</option>
+				<option value ="15" >x15</option>
+				<option value ="30" >x30</option>
+				<option value ="60" >x60</option>
+			</select>
+			<input id="startPlay" type="button" value="Playing" onclick="start_play()"/>
+			<label style="margin: 10px">
+				<input id="showStarRoute" type="checkbox" value="" onchange="change_starroute()" checked/>
+				显示近进程序
+			</label>
+			<label style="margin: 10px">
+				<input id="showPlaneLabel" type="checkbox" value="" onchange="change_planelabel()" checked/>
+				显示PlaneLabel
+			</label>
+			<label style="margin: 10px">
+				<input id="filterUnselectedPlane" type="checkbox" value="" onchange="filter_plane()"/>
+				仅显示选中的Plane
+			</label>
+		</div>
+	</div>
+	<div style="display: flex;">
+		<div id="allmap" ></div>
+		<div style="float:right">
+			<div style="width:200px;margin-right:1px">
+				<input id="selected_airplane" style="width:100px" />
+				<input id="addSelectedAirplane" type="button" onclick="add_selected_air_plane()" value="添加" \>
+			</div>
+			<div style="width:200px;margin-right:1px">
+				<table id="AirPlaneTable">
+					<tr>
+						<td>CSC8088</td>
+						<td>
+							<input type="button" onclick="cancel_airplane_selected('CSC8088')" value="删除"/>
+							<input id="showRadarMarker_" type="checkbox" value="" onchange="show_radar_marker('CSC8088')" checked/>r
+							<input id="showfixponit_" type="checkbox" value="" onchange="show_radar_marker('CSC8088')" checked/>f
+						</td>
+					</tr>
+				</table>
+			</div>
+		</div>
+	</div>
+</body>
+</html>
+<script type="text/javascript">
+	// 百度地图API功能
+	var map;
+	function onload(){
+		map = new BMap.Map("allmap");    // 创建Map实例
+		centerPoint = new BMap.Point(103.957923,30.566009)
+		map.centerAndZoom(centerPoint, 8);  // 初始化地图,设置中心点坐标和地图级别
+		//添加地图类型控件
+		map.addControl(new BMap.MapTypeControl({
+			mapTypes:[
+				BMAP_NORMAL_MAP,
+				BMAP_HYBRID_MAP
+			]}));
+		//map.setCurrentCity("成都");          // 设置地图显示的城市 此项是必须设置的
+		map.setCenter(centerPoint);
+		map.enableScrollWheelZoom(true);     //开启鼠标滚轮缩放
+		// console.log(styleJson);
+		map.setMapStyleV2({
+  			styleId: '3529feca41398196258f34cf11f69b78'
+		});
+	}
+
+	$(function(){
+		onload();
+		intial_enviroment(map);
+		airplane_update_timer(map);
+	});
+</script>
