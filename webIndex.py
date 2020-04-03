@@ -6,8 +6,7 @@ import inspect
 from bottle import route, run, default_app, static_file, response, request, TEMPLATE_PATH
 from web.base.dispatcher import Dispatcher
 from web.base.controllers import Controllers
-from util.Timer import TimerHandler
-from web.base.models import create_a_idle_timer
+
 
 def module_path(local_function):
     '''
